@@ -101,7 +101,48 @@ float three_way_min(float a, float b, float c)
 
 void rgb_to_hsv(image im)
 {
-    // TODO Fill this in
+    assert(im.c == 3);
+    int x, y;
+    for (x = 0; x < im.w; x++) {
+        for (y = 0; y < im.h; y++) {
+            // Get RGB vals
+            float R = get_pixel(im, x, y, 0);
+            float G = get_pixel(im, x, y, 1);
+            float B = get_pixel(im, x, y, 2);
+        
+            // Get Value from Max of RGB
+            float V = three_way_max(R, G, B);
+
+            // Calculate saturation from C = V - m, S = C / V
+            float m = three_way_min(R, G, B);
+            float C = V - m;
+            float S = C / V;
+
+            // Calculate Hue from Relative Ratios
+            float H;
+            if (C == 0.0) {
+                H = 0.0;
+            } else if (V == R) {
+                H = (G - B) / C;
+            } else if (V == G) {
+                H = (B - R) / C + 2;
+            } else {
+                H = (R - G) / C + 4;
+            }
+
+            // check if negative and loop around
+            if (H < 0.0) {
+                H = H / 6 + 1;
+            } else {
+                H = H / 6;
+            }
+
+            // assign the new values
+            set_pixel(im, x, y, 0, H);
+            set_pixel(im, x, y, 1, S);
+            set_pixel(im, x, y, 2, V);
+        }
+    }
 }
 
 void hsv_to_rgb(image im)
