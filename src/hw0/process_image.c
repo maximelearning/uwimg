@@ -15,7 +15,7 @@ int get_index(image im, int x, int y, int c);
 float get_pixel(image im, int x, int y, int c)
 {
     // Do bound checking on c?
-    if (c < 0 || c >= im.c) return 0;
+    assert (c >= 0 && c < im.c);
 
     // Use Clamp padding
     x = MIN(MAX(0,x), im.w - 1);
@@ -152,7 +152,59 @@ void rgb_to_hsv(image im)
 
 void hsv_to_rgb(image im)
 {
-    // TODO Fill this in
+    assert(im.c == 3);
+    int x, y;
+    for (x = 0; x < im.w; x++) {
+        for (y = 0; y < im.h; y++) {
+            // Get HSV vals (all fields 0 <= field <= 1)
+            float H = get_pixel(im, x, y, 0);
+            float S = get_pixel(im, x, y, 1);
+            float V = get_pixel(im, x, y, 2);
+        
+            // Init RGB values
+            float R = V, G = V, B = V;
+
+            // if H is defined, find RGB values            
+            if (H != 0.0) {
+                float C = V * S;
+                float m = V - C;
+
+                // undo the / 6
+                H *= 6.0;
+
+                // different formulas depending on H
+                if (H < 1) {
+                    // V = R, B < G, B = m
+                    G = H * C + m;
+                    B = m;   
+                } else if (H < 2){
+                    // V = G, B < R, B = m
+                    R = (2 - H) * C + m;
+                    B = m;
+                } else if (H < 3) {
+                    // V = G, R < B, R = m
+                    B = (H - 2) * C + m;
+                    R = m;
+                } else if (H < 4) {
+                    // V = B, R < G, R = m
+                    G = (4 - H) * C + m;
+                    R = m;
+                } else if (H < 5) {
+                    // V = B, G < R, G = m
+                    R = (H - 4) * C + m;
+                    G = m;
+                } else {
+                    // H <= 6, V = R, G < B, G = m
+                    B = m - (H - 6) * C;
+                    G = m;
+                }
+            }
+            // assign the new values
+            set_pixel(im, x, y, 0, R);
+            set_pixel(im, x, y, 1, G);
+            set_pixel(im, x, y, 2, B);
+        }
+    }
 }
 
 // Index Helper function, 
