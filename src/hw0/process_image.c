@@ -208,7 +208,7 @@ void hsv_to_rgb(image im)
 }
 
 // Index Helper function, 
-// finds the index given an image, x and y
+// finds the index given an image, x, y, and c
 int get_index(image im, int x, int y, int c)
 {
     return x + im.w * y + im.w * im.h * c;
