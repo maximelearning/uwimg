@@ -1,3 +1,8 @@
+/**
+ * Estevan Seyfried, eseyfried
+ * Max Sutters, msutters
+ */
+
 #include <math.h>
 #include "image.h"
 
@@ -16,10 +21,10 @@ image interpolate_helper(image im, int w, int h,
     image resized = make_image(w, h, im.c);
     
     // what is the scale and offset?
-    float scaleX = 1.0f + (2.0f * (im.w - w)) / (2.0f * w);
-    float offX = (im.w - w) / ((2.0f * w));
-    float scaleY = 1.0f + (2.0f * (im.h - h)) / (2.0f * h);
-    float offY = (im.h - h) / ((2.0f * h));
+    float scaleX = 1.0f + (im.w - w) / w;
+    float offX = (im.w - w) / (2.0f * w);
+    float scaleY = 1.0f + (im.h - h) / h;
+    float offY = (im.h - h) / (2.0f * h);
     
     // Loop through each px
     int c, x, y;
