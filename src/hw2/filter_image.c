@@ -41,14 +41,22 @@ float convolvePixel(image im, image filter, int x, int y, int filterChannel,
 
 void l1_normalize(image im)
 {
-    // find the normal of each pixel
-    int pixels = im.w * im.h;
-    float normal = 1.0f / pixels;
+    // Find the sum of all values in im for each channel
     int x, y, c;
+    float sum[3] = {0, 0, 0};
     for (c = 0; c < im.c; c++) {
         for (x = 0; x < im.w; x++) {
             for (y = 0; y < im.h; y++) {
-                set_pixel(im, x, y, c, normal);
+                sum[c] += get_pixel(im, x, y, c);
+            }
+        }
+    }
+    // now divide each value by the sum for that channel
+    for (c = 0; c < im.c; c++) {
+        for (x = 0; x < im.w; x++) {
+            for (y = 0; y < im.h; y++) {
+                float val = get_pixel(im, x, y, c);
+                set_pixel(im, x, y, c, val / sum[c]);
             }
         }
     }
@@ -56,9 +64,16 @@ void l1_normalize(image im)
 
 image make_box_filter(int w)
 {
-    image filter = make_image(w, w, 1);
-    l1_normalize(filter);
-    return filter;
+    image im = make_image(w, w, 1);
+    int x, y;
+    // fill with 1's then normalize
+    for (y = 0; y < im.h; y++) {
+        for (x = 0; x < im.w; x++) {
+            set_pixel(im, x, y, 0, 1.0f);
+        }
+    }
+    l1_normalize(im);
+    return im;
 }
 
 image convolve_image(image im, image filter, int preserve)
@@ -72,6 +87,7 @@ image convolve_image(image im, image filter, int preserve)
     tuple* fCords = filterCords(filter);
     image output = make_image(im.w, im.h, c);
 
+    // Apply filter to each pixel in im
     for (x = 0; x < output.w; x++) {
         for (y = 0; y < output.h; y++) {
             for (c = 0; c < im.c; c++) {
@@ -106,14 +122,26 @@ image make_highpass_filter()
 
 image make_sharpen_filter()
 {
-    // TODO
-    return make_image(1,1,1);
+    image im = make_image(3,3,1);
+    set_pixel(im, 1, 0, 0, -1);
+    set_pixel(im, 0, 1, 0, -1);
+    set_pixel(im, 1, 1, 0, 5);
+    set_pixel(im, 2, 1, 0, -1);
+    set_pixel(im, 1, 2, 0, -1);
+    return im;
 }
 
 image make_emboss_filter()
 {
-    // TODO
-    return make_image(1,1,1);
+    image im = make_image(3,3,1);
+    set_pixel(im, 0, 0, 0, -2);
+    set_pixel(im, 1, 0, 0, -1);
+    set_pixel(im, 0, 1, 0, -1);
+    set_pixel(im, 1, 1, 0, 1);
+    set_pixel(im, 2, 1, 0, 1);
+    set_pixel(im, 1, 2, 0, 1);
+    set_pixel(im, 2, 2, 0, 2);
+    return im;
 }
 
 // Question 2.2.1: Which of these filters should we use preserve when we run our convolution and which ones should we not? Why?
@@ -124,8 +152,25 @@ image make_emboss_filter()
 
 image make_gaussian_filter(float sigma)
 {
-    // TODO
-    return make_image(1,1,1);
+    // calculate size, ensure it is an odd integer
+    int size = 6 * sigma;
+    if (size % 2 == 0) size += 1;
+    image im = make_image(size, size, 1);
+
+    // we calculate around the center, so get offset coords
+    tuple* offCords = filterCords(im);
+    printf("%d, %d\n", offCords[0].x, offCords[0].y);
+    for (int i = 0; i < size * size; i++) {
+        float x = offCords[i].x;
+        float y = offCords[i].y;
+        float num = exp(-1.0f * (x * x + y * y) / (2.0f * sigma * sigma));
+        float den = TWOPI * sigma * sigma;
+        // TODO: this is bad, we should be abstracting and using 
+        // set pixel instead of modifying contents directly...
+        im.data[i] = num / den;
+    }
+    l1_normalize(im);
+    return im;
 }
 
 image add_image(image a, image b)
