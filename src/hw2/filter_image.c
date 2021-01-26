@@ -82,7 +82,7 @@ image convolve_image(image im, image filter, int preserve)
         for (y = 0; y < output.h; y++) {
             float finalPix;
             if (preserve == 1) {
-                for (c = 0; c < output.c; c++) {
+                for (c = 0; c < im.c; c++) {
                     if (filter.c == 1) {
                         // only 1 filter chanel use 1 for each pass
                         finalPix = convolvePixel(im, filter, x, y, 0, c, fCords);
@@ -95,7 +95,7 @@ image convolve_image(image im, image filter, int preserve)
                 }
             } else {
                 // We need to output one channel
-                for (c = 0; c < output.c; c++) {
+                for (c = 0; c < im.c; c++) {
                     if (filter.c == 1) {
                         // only 1 filter chanel use 1 for each pass
                         finalPix = convolvePixel(im, filter, x, y, 0, c, fCords);
@@ -120,8 +120,13 @@ image convolve_image(image im, image filter, int preserve)
 
 image make_highpass_filter()
 {
-    // TODO
-    return make_image(1,1,1);
+    image im = make_image(3,3,1);
+    set_pixel(im, 1, 0, 0, -1);
+    set_pixel(im, 0, 1, 0, -1);
+    set_pixel(im, 1, 1, 0, 4);
+    set_pixel(im, 2, 1, 0, -1);
+    set_pixel(im, 1, 2, 0, -1);
+    return im;
 }
 
 image make_sharpen_filter()
