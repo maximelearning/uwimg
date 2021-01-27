@@ -145,10 +145,17 @@ image make_emboss_filter()
 }
 
 // Question 2.2.1: Which of these filters should we use preserve when we run our convolution and which ones should we not? Why?
-// Answer: TODO
+// Answer: Highpass is used to find edges, which rely on imformation from more than one channel, therefore
+// we should not preserve and collapse the info into one channel since we only care about the difference and not color. 
+//
+// Sharpen is a combination of highpass and identity, and is used mainly for image manipulation and visual effect,
+// we usually preserve to keep the color.
+//
+// Emboss does not have much use for computer vision and is used as a visual effect, so we usually preserve to keep the color. 
 
 // Question 2.2.2: Do we have to do any post-processing for the above filters? Which ones and why?
-// Answer: TODO
+// Answer: We should apply clamp post-proccessing for all the above filters since the convolving operation may 
+// result in values outside the allowable range. 
 
 image make_gaussian_filter(float sigma)
 {
@@ -159,14 +166,13 @@ image make_gaussian_filter(float sigma)
 
     // we calculate around the center, so get offset coords
     tuple* offCords = filterCords(im);
-    printf("%d, %d\n", offCords[0].x, offCords[0].y);
     for (int i = 0; i < size * size; i++) {
         float x = offCords[i].x;
         float y = offCords[i].y;
         float num = exp(-1.0f * (x * x + y * y) / (2.0f * sigma * sigma));
         float den = TWOPI * sigma * sigma;
         // TODO: this is bad, we should be abstracting and using 
-        // set pixel instead of modifying contents directly...
+        // set_pixel() instead of modifying contents directly...
         im.data[i] = num / den;
     }
     l1_normalize(im);
@@ -175,37 +181,74 @@ image make_gaussian_filter(float sigma)
 
 image add_image(image a, image b)
 {
-    // TODO
-    return make_image(1,1,1);
+    // Make sure same size
+    assert(a.h == b.h && a.w == b.w && a.c == b.c);
+    image im = make_image(a.w, a.h, a.c);
+    int size = a.w * a.h * a.c;
+    for (int i = 0; i < size; i++) {
+        im.data[i] = a.data[i] + b.data[i];
+    }
+    return im;
 }
 
 image sub_image(image a, image b)
 {
-    // TODO
-    return make_image(1,1,1);
+    // Make sure same size
+    assert(a.h == b.h && a.w == b.w && a.c == b.c);
+    image im = make_image(a.w, a.h, a.c);
+    int size = a.w * a.h * a.c;
+    for (int i = 0; i < size; i++) {
+        im.data[i] = a.data[i] - b.data[i];
+    }
+    return im;
 }
 
 image make_gx_filter()
 {
-    // TODO
-    return make_image(1,1,1);
+    image im = make_image(3, 3, 1);
+    im.data[0] = -1.0f;
+    im.data[2] = 1.0f;
+    im.data[3] = -2.0f;
+    im.data[5] = 2.0f;
+    im.data[6] = -1.0f;
+    im.data[8] = 1.0f;
+    return im;
 }
 
 image make_gy_filter()
 {
-    // TODO
-    return make_image(1,1,1);
+    image im = make_image(3, 3, 1);
+    im.data[0] = -1.0f;
+    im.data[1] = -2.0f;
+    im.data[2] = -1.0f;
+    im.data[6] = 1.0f;
+    im.data[7] = 2.0f;
+    im.data[8] = 1.0f;
+    return im;
 }
 
 void feature_normalize(image im)
 {
-    // TODO
+    assert(im.w > 0 && im.h > 0 && im.c > 0);
+    // find min and max
+    float min = im.data[0];
+    float max = im.data[0];
+    int size = im.w * im.h * im.c;
+    for (int i = 0; i < size; i++) {
+        min = MIN(min, im.data[i]);
+        max = MAX(max, im.data[i]);
+    }
+    float range = max - min;
+    for (int i = 0; i < size; i++) {
+        im.data[i] = (range == 0.0f) ? 0.0f : (im.data[i] - min) / range;
+    }
 }
 
 image *sobel_image(image im)
 {
-    // TODO
-    return calloc(2, sizeof(image));
+    // allocate space for images
+    image* result = calloc(2, sizeof(image));
+    return result;
 }
 
 image colorize_sobel(image im)
