@@ -175,6 +175,9 @@ image make_gaussian_filter(float sigma)
         // set_pixel() instead of modifying contents directly...
         im.data[i] = num / den;
     }
+
+    free(offCords);
+
     l1_normalize(im);
     return im;
 }
@@ -248,11 +251,53 @@ image *sobel_image(image im)
 {
     // allocate space for images
     image* result = calloc(2, sizeof(image));
+    // result store for gradient magnitude
+    result[0] = make_image(im.w, im.h, 1);
+    // result store for gradient direction
+    result[1] = make_image(im.w, im.h, 1);
+
+    image gx = convolve_image(im, make_gx_filter(), 0);
+    image gy = convolve_image(im, make_gy_filter(), 0);
+
+    // note: only returning one channel of data, so don't need im.c
+    int size = gx.w * gx.h * gx.c; // = gy.w * gy.h * gy.c
+    for (int i = 0; i < size; i++) {
+        result[0].data[i] = sqrtf(powf(gx.data[i], 2) + powf(gy.data[i], 2));
+        result[1].data[i] = atan2f(gy.data[i], gx.data[i]);
+    }
+
     return result;
 }
 
 image colorize_sobel(image im)
 {
-    // TODO
-    return make_image(1,1,1);
+    // get sobel image
+    image* sim = sobel_image(im);
+
+    // normalize channels of sobel image
+    feature_normalize(sim[0]);
+    feature_normalize(sim[1]);
+
+    // note: want to manipulate RGB values, so 3 channels in the result image
+    image result = make_image(sim[0].w, sim[0].h, 3);
+    for (int x = 0; x < result.w; x++) {
+        for (int y = 0; y < result.h; y++) {
+            // calculate and set hue with angle (note: angle is same thing as gradient direction)
+            float hue = get_pixel(sim[1], x, y, 0);
+            set_pixel(result, x, y, 0, hue);
+            // calculate and set saturation and value (note: satVal comes from magnitude)
+            float satVal = get_pixel(sim[0], x, y, 0);
+            set_pixel(result, x, y, 1, satVal);
+            set_pixel(result, x, y, 2, satVal);
+        }
+    }
+    free(sim);
+
+    hsv_to_rgb(result);
+
+    image f = make_gaussian_filter(2);
+    image blurred_result = convolve_image(result, f, 1); // blurred image
+    clamp_image(blurred_result);
+
+    return blurred_result;
 }
