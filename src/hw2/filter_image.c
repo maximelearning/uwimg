@@ -1,3 +1,8 @@
+/**
+ * Estevan Seyfried:    estevans
+ * Maxime Sutters:      msutters
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -295,8 +300,9 @@ image colorize_sobel(image im)
 
     hsv_to_rgb(result);
 
-    image f = make_gaussian_filter(2);
-    image blurred_result = convolve_image(result, f, 1); // blurred image
+    image f = make_gaussian_filter(1);
+    image blurred_result = convolve_image(result, f, 1); 
+    blurred_result = add_image(add_image(blurred_result, result), result);
     clamp_image(blurred_result);
 
     return blurred_result;
