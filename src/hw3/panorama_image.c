@@ -1,3 +1,8 @@
+/*
+ * Estevan Seyfried, estevans
+ * Maxime Sutters, msutters
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -231,32 +236,20 @@ int model_inliers(matrix H, match *m, int n, float thresh)
 {
     int i;
     int count = 0;
-    // print_matrix(H);
-    // printf("thres %f\n", thresh);
-    // printf("(%f, %f), (%f, %f)\n", m[0].p.x, m[0].p.y, m[0].q.x, m[0].q.y);
-    // printf("%d, %d\n", H.cols, H.rows);
-    // if (H.cols == 0 && H.rows == 0) {
-    //     printf("\n\nempty\n\n\n");
-    // }
-    // point p1 = project_point(H, m[0].p);
-    // point p2 = project_point(H, m[0].q);
-    // printf("(%f, %f), (%f, %f)\n", p1.x, p1.y, p2.x, p2.y);
     
     for (i = 0; i < n; i++) {
         // find the projected point
         point p = project_point(H, m[i].p);
         float dist = point_distance(p, m[i].q);
         if (dist < thresh) {
-            // swap
+            // Swap the matches m so the inliers are the first 'count' elements.
             match temp = m[count];
             m[count] = m[i];
             m[i] = temp;
             count++;
         }
     }
-    // printf("count: %d\n\n", count);
-    // i.e. distance(H*p, q) < thresh
-    // Also, sort the matches m so the inliers are the first 'count' elements.
+
     return count;
 }
 
@@ -280,7 +273,7 @@ void randomize_matches(match *m, int n)
 // returns: matrix representing homography H that maps image a to image b.
 matrix compute_homography(match *matches, int n)
 {
-    // Should we always be calling with at least 4 matches?
+    // TODO: Should we always be calling with at least 4 matches?
     matrix M = make_matrix(n*2, 8);
     matrix b = make_matrix(n*2, 1);
 
@@ -290,7 +283,6 @@ matrix compute_homography(match *matches, int n)
         double xp = matches[i].q.x;
         double y  = matches[i].p.y;
         double yp = matches[i].q.y;
-        // TODO: fill in the matrices M and b.
         int row = i * 2;
         // M row 0
         M.data[row][0] = x;
@@ -311,14 +303,13 @@ matrix compute_homography(match *matches, int n)
         b.data[row][0] = yp;
     }
     matrix a;
-    if (M.rows == 8) {
-        a = solve_system(M, b);
-    } else {
-        // a = (Mt * M)^-1 * Mt * b
-        matrix Mt = transpose_matrix(M);
-        a = matrix_mult_matrix(matrix_mult_matrix(
-            matrix_invert(matrix_mult_matrix(Mt, M)), Mt), b);
-    }
+    // TODO: should there be error handleing here and return empty matrix 
+    // if some step would crash?
+    // a = (Mt * M)^-1 * Mt * b
+    matrix Mt = transpose_matrix(M);
+    a = matrix_mult_matrix(matrix_mult_matrix(
+        matrix_invert(matrix_mult_matrix(Mt, M)), Mt), b);
+    free_matrix(Mt);
      
     free_matrix(M); free_matrix(b); 
 
@@ -336,7 +327,6 @@ matrix compute_homography(match *matches, int n)
     H.data[1][2] = a.data[5][0];
     H.data[2][0] = a.data[6][0];
     H.data[2][1] = a.data[7][0];
-    // should we always set 22 = 1?
     H.data[2][2] = 1.0;
     free_matrix(a);
     return H;
@@ -363,7 +353,6 @@ matrix RANSAC(match *m, int n, float thresh, int k, int cutoff)
         matrix model = compute_homography(m, 4);
         // ignore empty models
         if (model.cols == 0 && model.rows == 0) {
-            // printf("skipping\n\n");
             free_matrix(model);
             continue;
         }
@@ -373,21 +362,19 @@ matrix RANSAC(match *m, int n, float thresh, int k, int cutoff)
             free_matrix(Hb);
             // compute updated homography using all inliers
             Hb = compute_homography(m, inliers);
+            // TODO: do we need to error handle here as well?
             free_matrix(model);
             // remember it and how good it is
             best = inliers;
             // if it's better than the cutoff:
             if (best > cutoff) {
-                // return it immediately
-                // printf("return early, best: %d\n", best);
                 return Hb;
             }
         } else {
             free_matrix(model);
         }
     }
-    // printf("best %d\n", best);
-    // if we get to the end return the best homography
+
     return Hb;
 }
 
@@ -400,10 +387,10 @@ image combine_images(image a, image b, matrix H)
     matrix Hinv = matrix_invert(H);
 
     // Project the corners of image b into image a coordinates.
-    point c1 = project_point(Hinv, make_point(0,0));
-    point c2 = project_point(Hinv, make_point(b.w-1, 0));
-    point c3 = project_point(Hinv, make_point(0, b.h-1));
-    point c4 = project_point(Hinv, make_point(b.w-1, b.h-1));
+    point c1 = project_point(Hinv, make_point(0,0)); // top left
+    point c2 = project_point(Hinv, make_point(b.w-1, 0)); // top right
+    point c3 = project_point(Hinv, make_point(0, b.h-1)); // bottom left
+    point c4 = project_point(Hinv, make_point(b.w-1, b.h-1)); // bottom right
 
     // Find top left and bottom right corners of image b warped into image a.
     point topleft, botright;
@@ -427,33 +414,35 @@ image combine_images(image a, image b, matrix H)
 
     int i,j,k;
     image c = make_image(w, h, a.c);
-    
-    // Paste image a into the new image offset by dx and dy.
+
+    // Paste image a into the new image offset by dx and dy.    
     for(k = 0; k < a.c; ++k){
         for(j = 0; j < a.h; ++j){
             for(i = 0; i < a.w; ++i){
                 float aVal = get_pixel(a, i, j, k);
-                set_pixel(c, i +dx , j + dy  , k, aVal);
+                set_pixel(c, i  - dx , j - dy  , k, aVal);
             }
         }
     }
     
-
     // Paste in image b as well.
     // TODO: make more efficient, do not run for every pixel in c
+    // Also need to check pixels outside of a since b might extend further
+    // int topX = floorf(c1.x);
+    // int topY = floorf(c1.y);
+    // int botX = ceilf(c4.x);
+    // int botY = ceilf(c4.y);
     for(k = 0; k < c.c; ++k){
-        for(j = 0; j < c.h; ++j){
-            for(i = 0; i < c.w; ++i){
+        for(j = topleft.y; j < botright.y; ++j){
+            for(i = topleft.x; i < botright.x; ++i){
                 point proj = project_point(H, make_point(i, j));
                 if (proj.x >= 0 && proj.x < b.w && proj.y >= 0 && proj.y < b.h) {
                     float bVal = bilinear_interpolate(b, proj.x, proj.y, k);
-                    set_pixel(c, i, j, k, bVal);
+                    set_pixel(c, i - dx, j - dy, k, bVal);
                 }
             }
         }
     }
-
-    
 
     // You should loop over some points in the new image (which? all?)
     // and see if their projection from a coordinates to b coordinates falls
@@ -488,7 +477,7 @@ image panorama_image(image a, image b, float sigma, float thresh, int nms, float
     // Run RANSAC to find the homography
     matrix H = RANSAC(m, mn, inlier_thresh, iters, cutoff);
 
-    if(1){
+    if(0){
         // Mark corners and matches between images
         mark_corners(a, ad, an);
         mark_corners(b, bd, bn);
