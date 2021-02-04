@@ -168,12 +168,12 @@ image nms_image(image im, int w)
     // for every pixel in the image:
     for (int x = 0; x < im.w; x++) {
         for (int y = 0; y < im.h; y++) {
-            float val = get_pixel(r, x, y, 0);
+            float val = get_pixel(im, x, y, 0);
             // for neighbors within w:
             for (int i = 0; i < size; i++) {
                 int offX = i % width - w;
                 int offY = i / width - w;
-                float nVal = get_pixel(r, x + offX, y + offY, 0);
+                float nVal = get_pixel(im, x + offX, y + offY, 0);
                 // if neighbor response greater set response to be very low 
                 if (nVal > val) {
                     set_pixel(r, x, y, 0, NEG);
