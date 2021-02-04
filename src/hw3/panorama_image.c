@@ -280,6 +280,7 @@ void randomize_matches(match *m, int n)
 // returns: matrix representing homography H that maps image a to image b.
 matrix compute_homography(match *matches, int n)
 {
+    // Should we always be calling with at least 4 matches?
     matrix M = make_matrix(n*2, 8);
     matrix b = make_matrix(n*2, 1);
 
@@ -309,7 +310,16 @@ matrix compute_homography(match *matches, int n)
         // b row 1
         b.data[row][0] = yp;
     }
-    matrix a = solve_system(M, b);
+    matrix a;
+    if (M.rows == 8) {
+        a = solve_system(M, b);
+    } else {
+        // a = (Mt * M)^-1 * Mt * b
+        matrix Mt = transpose_matrix(M);
+        a = matrix_mult_matrix(matrix_mult_matrix(
+            matrix_invert(matrix_mult_matrix(Mt, M)), Mt), b);
+    }
+     
     free_matrix(M); free_matrix(b); 
 
     // If a solution can't be found, return empty matrix;
@@ -350,7 +360,7 @@ matrix RANSAC(match *m, int n, float thresh, int k, int cutoff)
         // shuffle the matches
         randomize_matches(m, n);
         // compute a homography with a few matches (how many??)
-        matrix model = compute_homography(m, 2);
+        matrix model = compute_homography(m, 4);
         // ignore empty models
         if (model.cols == 0 && model.rows == 0) {
             // printf("skipping\n\n");
@@ -423,7 +433,7 @@ image combine_images(image a, image b, matrix H)
         for(j = 0; j < a.h; ++j){
             for(i = 0; i < a.w; ++i){
                 float aVal = get_pixel(a, i, j, k);
-                set_pixel(c, i + dx , j + dy  , k, aVal);
+                set_pixel(c, i +dx , j + dy  , k, aVal);
             }
         }
     }
