@@ -178,7 +178,6 @@ match *match_descriptors(descriptor *a, int an, descriptor *b, int bn, int *mn)
             count++;
         }
     }
-    
     // Each point should only be a part of one match.
     // Some points will not be in a match.
     // In practice just bring good matches to front of list, set *mn.
@@ -213,7 +212,7 @@ point project_point(matrix H, point p)
 float point_distance(point p, point q)
 {
     float x = p.x - q.x;
-    float y = p.y = q.y;
+    float y = p.y - q.y;
     return sqrtf(x * x + y * y);
 }
 
@@ -230,12 +229,30 @@ int model_inliers(matrix H, match *m, int n, float thresh)
 {
     int i;
     int count = 0;
+    print_matrix(H);
+    printf("thres %f\n", thresh);
+    printf("(%f, %f), (%f, %f)\n", m[0].p.x, m[0].p.y, m[0].q.x, m[0].q.y);
+    printf("%d, %d\n", H.cols, H.rows);
+    if (H.cols == 0 && H.rows == 0) {
+        printf("\n\nempty\n\n\n");
+    }
+    point p1 = project_point(H, m[0].p);
+    point p2 = project_point(H, m[0].q);
+    printf("(%f, %f), (%f, %f)\n", p1.x, p1.y, p2.x, p2.y);
+    
     for (i = 0; i < n; i++) {
         // find the projected point
-        point p = project_point(H, m[i].p);
-        float dist = point_distance(p, m[i].q);
-        if (dist < thresh) m[count++] = m[i];
+        point q = project_point(H, m[i].q);
+        float dist = point_distance(q, m[i].p);
+        if (dist < thresh) {
+            // swap
+            match temp = m[count];
+            m[count] = m[i];
+            m[i] = temp;
+            count++;
+        }
     }
+    // printf("count: %d\n\n", count);
     // i.e. distance(H*p, q) < thresh
     // Also, sort the matches m so the inliers are the first 'count' elements.
     return count;
@@ -307,7 +324,7 @@ matrix compute_homography(match *matches, int n)
     H.data[1][2] = a.data[5][0];
     H.data[2][0] = a.data[6][0];
     H.data[2][1] = a.data[7][0];
-    if (n > 8) {
+    if (0) {
         H.data[2][2] = a.data[8][0];
     } else {
         H.data[2][2] = 1.0; //a.data[8][0];
@@ -336,25 +353,37 @@ matrix RANSAC(match *m, int n, float thresh, int k, int cutoff)
         // shuffle the matches
         randomize_matches(m, n);
         // compute a homography with a few matches (how many??)
-        matrix model = compute_homography(m, 8);
+        matrix model = compute_homography(m, 2);
+        // ignore empty models
+        if (model.cols == 0 && model.rows == 0) {
+            printf("skipping\n\n");
+            free_matrix(model);
+            continue;
+        }
+        printf("matrix size:%d, %d\n", model.cols, model.rows);
         int inliers = model_inliers(model, m, n, thresh);
         // if new homography is better than old (how can you tell?):
         if (inliers > best) {
             free_matrix(Hb);
             // compute updated homography using all inliers
             Hb = compute_homography(m, inliers);
+            if (Hb.cols == 0 && Hb.rows == 0) {
+                printf("empty\n");
+            }
             free_matrix(model);
             // remember it and how good it is
             best = inliers;
             // if it's better than the cutoff:
             if (best > cutoff) {
                 // return it immediately
+                printf("return early, best: %d\n", best);
                 return Hb;
             }
         } else {
             free_matrix(model);
         }
     }
+    printf("best %d\n", best);
     // if we get to the end return the best homography
     return Hb;
 }
@@ -397,28 +426,34 @@ image combine_images(image a, image b, matrix H)
     image c = make_image(w, h, a.c);
     
     // Paste image a into the new image offset by dx and dy.
+
+    printf("%d, %d\n",dx, dy);
     for(k = 0; k < a.c; ++k){
         for(j = 0; j < a.h; ++j){
             for(i = 0; i < a.w; ++i){
                 float aVal = get_pixel(a, i, j, k);
-                set_pixel(c, i , j , k, aVal);
+                set_pixel(c, i + dx , j + dy  , k, aVal);
             }
         }
     }
+    
 
     // TODO: Paste in image b as well.
 
-    
-    for(k = 0; k < b.c; ++k){
-        for(j = 0; j < b.h; ++j){
-            for(i = 0; i < b.w; ++i){
-                float bVal = get_pixel(b, i, j, k);
+/*
+    for(k = 0; k < c.c; ++k){
+        for(j = 0; j < c.h; ++j){
+            for(i = 0; i < c.w; ++i){
                 point proj = project_point(H, make_point(i, j));
-                set_pixel(c, proj.x, proj.y, k, bVal);
+                if (proj.x >= 0 && proj.x < b.w && proj.y >= 0 && proj.y < b.h) {
+                    float bVal = bilinear_interpolate(b, proj.x, proj.y, k);
+                    set_pixel(c, i, j, k, bVal);
+                }
             }
         }
     }
-    
+
+    */
 
     // You should loop over some points in the new image (which? all?)
     // and see if their projection from a coordinates to b coordinates falls
