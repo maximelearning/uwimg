@@ -41,6 +41,8 @@ void draw_line(image im, float x, float y, float dx, float dy)
     }
 }
 
+// Get helper
+
 // Make an integral image or summed area table from an image
 // image im: image to process
 // returns: image I such that I[x,y] = sum{i<=x, j<=y}(im[i,j])
@@ -52,8 +54,15 @@ image make_integral_image(image im)
     for (int c = 0; c < im.c; c++) {
         for (int x = 0; x < im.w; x++) {
             for (int y = 0; y < im.h; y++) {
-                
-                set_pixel(integ, x, y, )
+                float i = get_pixel(im, x, y, c);
+                float I_up, I_left, I_kitty = 0;
+
+                // check if values are safe to fetch, zero if not
+                if (y > 0) I_up = get_pixel(integ, x, y - 1, c);
+                if (x > 0) I_left = get_pixel(integ, x - 1, y, c);
+                if (x > 0 && y > 0) I_kitty = get_pixel(integ, x - 1, y - 1, c);
+
+                set_pixel(integ, x, y, c, i + I_up + I_left - I_kitty);
             }
         }
     }
