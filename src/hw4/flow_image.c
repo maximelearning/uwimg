@@ -80,22 +80,29 @@ image box_filter_image(image im, int s)
     image integ = make_integral_image(im);
     image S = make_image(im.w, im.h, im.c);
     // TODO: fill in S using the integral image.
+    int offset = s / 2;
 
     for (int c = 0; c < im.c; c++) {
         for (int x = 0; x < im.w; x++) {
             for (int y = 0; y < im.h; y++) {
-                int offset = s / 2;
-                int x_min = MAX(x - offset, 0);
+                // calculate corners, we want A,B,C to be the pixels just outside the window
+                int x_min = MAX(x - offset - 1, -1);
                 int x_max = MIN(x + offset, im.w - 1);
-                int y_min = MAX(y - offset, 0);
+                int y_min = MAX(y - offset - 1, -1);
                 int y_max = MIN(y + offset, im.h - 1);
 
-                float A = get_pixel(integ, x_min, y_min, c);
-                float B = get_pixel(integ, x_max, y_min, c);
-                float C = get_pixel(integ, x_min, y_max, c);
+                // set initial corner values
+                float A = 0, B = 0, C = 0;
                 float D = get_pixel(integ, x_max, y_max, c);
 
-                set_pixel(S, x, y, c, D - B - C + A);
+                // check if values are safe to fetch, zero if not
+                if (x_min >= 0) C = get_pixel(integ, x_min, y_max, c);
+                if (y_min >= 0) B = get_pixel(integ, x_max, y_min, c);
+                if (x_min >= 0 && y_min >= 0) A = get_pixel(integ, x_min, y_min, c);
+                
+                // compute the actual box coordinates
+                int boxSize = (x_max - x_min) * (y_max - y_min);
+                set_pixel(S, x, y, c, (D - B - C + A ) / boxSize);
             }
         }
     }
