@@ -55,7 +55,7 @@ image make_integral_image(image im)
         for (int x = 0; x < im.w; x++) {
             for (int y = 0; y < im.h; y++) {
                 float i = get_pixel(im, x, y, c);
-                float I_up, I_left, I_kitty = 0;
+                float I_up = 0, I_left = 0, I_kitty = 0;
 
                 // check if values are safe to fetch, zero if not
                 if (y > 0) I_up = get_pixel(integ, x, y - 1, c);
@@ -76,10 +76,29 @@ image make_integral_image(image im)
 // returns: smoothed image
 image box_filter_image(image im, int s)
 {
-    int i,j,k;
+    // int i,j,k;
     image integ = make_integral_image(im);
     image S = make_image(im.w, im.h, im.c);
     // TODO: fill in S using the integral image.
+
+    for (int c = 0; c < im.c; c++) {
+        for (int x = 0; x < im.w; x++) {
+            for (int y = 0; y < im.h; y++) {
+                int offset = s / 2;
+                int x_min = MAX(x - offset, 0);
+                int x_max = MIN(x + offset, im.w - 1);
+                int y_min = MAX(y - offset, 0);
+                int y_max = MIN(y + offset, im.h - 1);
+
+                float A = get_pixel(integ, x_min, y_min, c);
+                float B = get_pixel(integ, x_max, y_min, c);
+                float C = get_pixel(integ, x_min, y_max, c);
+                float D = get_pixel(integ, x_max, y_max, c);
+
+                set_pixel(S, x, y, c, D - B - C + A);
+            }
+        }
+    }
     return S;
 }
 
