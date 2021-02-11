@@ -76,7 +76,6 @@ image make_integral_image(image im)
 // returns: smoothed image
 image box_filter_image(image im, int s)
 {
-    // int i,j,k;
     image integ = make_integral_image(im);
     image S = make_image(im.w, im.h, im.c);
     int offset = s / 2;
@@ -127,8 +126,6 @@ image time_structure_matrix(image im, image prev, int s)
     // Make derivative images
     image Ix = convolve_image(im, make_gx_filter(), 0);
     image Iy = convolve_image(im, make_gy_filter(), 0);
-    image Ix_p = convolve_image(prev, make_gx_filter(), 0);
-    image Iy_p = convolve_image(prev, make_gy_filter(), 0);
 
     image S_p = make_image(im.w, im.h, 5);
 
@@ -137,8 +134,7 @@ image time_structure_matrix(image im, image prev, int s)
         for (int y = 0; y < im.h; y++) {
             float xDer = get_pixel(Ix, x, y, 0);
             float yDer = get_pixel(Iy, x, y, 0);
-            // TODO is it correct?
-            float It = get_pixel(Ix_p, x, y, 0) + get_pixel(Iy_p, x, y, 0) - xDer - yDer;
+            float It = get_pixel(im, x, y, 0) - get_pixel(prev, x, y, 0);
             set_pixel(S_p, x, y, 0, xDer * xDer);
             set_pixel(S_p, x, y, 1, yDer * yDer);
             set_pixel(S_p, x, y, 2, xDer * yDer);
@@ -155,8 +151,6 @@ image time_structure_matrix(image im, image prev, int s)
     }
     free_image(Ix);
     free_image(Iy);
-    free_image(Ix_p);
-    free_image(Iy_p);
     free_image(S_p);
     return S;
 }
