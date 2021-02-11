@@ -79,7 +79,6 @@ image box_filter_image(image im, int s)
     // int i,j,k;
     image integ = make_integral_image(im);
     image S = make_image(im.w, im.h, im.c);
-    // TODO: fill in S using the integral image.
     int offset = s / 2;
 
     for (int c = 0; c < im.c; c++) {
@@ -101,7 +100,7 @@ image box_filter_image(image im, int s)
                 if (x_min >= 0 && y_min >= 0) A = get_pixel(integ, x_min, y_min, c);
                 
                 // compute the actual box coordinates
-                int boxSize = (x_max - x_min) * (y_max - y_min);
+                float boxSize = (x_max - x_min) * (y_max - y_min);
                 set_pixel(S, x, y, c, (D - B - C + A ) / boxSize);
             }
         }
@@ -125,13 +124,40 @@ image time_structure_matrix(image im, image prev, int s)
         prev = rgb_to_grayscale(prev);
     }
 
-    // TODO: calculate gradients, structure components, and smooth them
+    // Make derivative images
+    image Ix = convolve_image(im, make_gx_filter(), 0);
+    image Iy = convolve_image(im, make_gy_filter(), 0);
+    image Ix_p = convolve_image(prev, make_gx_filter(), 0);
+    image Iy_p = convolve_image(prev, make_gy_filter(), 0);
 
-    image S;
+    image S_p = make_image(im.w, im.h, 5);
 
-    if(converted){
+    // fill in corresponding measures
+    for (int x = 0; x < im.w; x++) {
+        for (int y = 0; y < im.h; y++) {
+            float xDer = get_pixel(Ix, x, y, 0);
+            float yDer = get_pixel(Iy, x, y, 0);
+            // TODO is it correct?
+            float It = get_pixel(Ix_p, x, y, 0) + get_pixel(Iy_p, x, y, 0) - xDer - yDer;
+            set_pixel(S_p, x, y, 0, xDer * xDer);
+            set_pixel(S_p, x, y, 1, yDer * yDer);
+            set_pixel(S_p, x, y, 2, xDer * yDer);
+            set_pixel(S_p, x, y, 3, xDer * It);
+            set_pixel(S_p, x, y, 4, yDer * It);
+        }
+    }
+
+    image S =  box_filter_image(S_p, s);
+
+    // if we converted the images then free them
+    if (converted){
         free_image(im); free_image(prev);
     }
+    free_image(Ix);
+    free_image(Iy);
+    free_image(Ix_p);
+    free_image(Iy_p);
+    free_image(S_p);
     return S;
 }
 
