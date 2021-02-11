@@ -49,7 +49,6 @@ void draw_line(image im, float x, float y, float dx, float dy)
 image make_integral_image(image im)
 {
     image integ = make_image(im.w, im.h, im.c);
-    // TODO: fill in the integral image
 
     for (int c = 0; c < im.c; c++) {
         for (int x = 0; x < im.w; x++) {
@@ -104,6 +103,7 @@ image box_filter_image(image im, int s)
             }
         }
     }
+    free_image(integ);
     return S;
 }
 
@@ -115,7 +115,6 @@ image box_filter_image(image im, int s)
 //          3rd channel is IxIy, 4th channel is IxIt, 5th channel is IyIt.
 image time_structure_matrix(image im, image prev, int s)
 {
-    int i;
     int converted = 0;
     if(im.c == 3){
         converted = 1;
@@ -126,7 +125,6 @@ image time_structure_matrix(image im, image prev, int s)
     // Make derivative images
     image Ix = convolve_image(im, make_gx_filter(), 0);
     image Iy = convolve_image(im, make_gy_filter(), 0);
-
     image S_p = make_image(im.w, im.h, 5);
 
     // fill in corresponding measures
@@ -147,7 +145,8 @@ image time_structure_matrix(image im, image prev, int s)
 
     // if we converted the images then free them
     if (converted){
-        free_image(im); free_image(prev);
+        free_image(im); 
+        free_image(prev);
     }
     free_image(Ix);
     free_image(Iy);
@@ -163,6 +162,7 @@ image velocity_image(image S, int stride)
     image v = make_image(S.w/stride, S.h/stride, 3);
     int i, j;
     matrix M = make_matrix(2,2);
+    matrix N = make_matrix(2,1);
     for(j = (stride-1)/2; j < S.h; j += stride){
         for(i = (stride-1)/2; i < S.w; i += stride){
             float Ixx = S.data[i + S.w*j + 0*S.w*S.h];
@@ -171,15 +171,31 @@ image velocity_image(image S, int stride)
             float Ixt = S.data[i + S.w*j + 3*S.w*S.h];
             float Iyt = S.data[i + S.w*j + 4*S.w*S.h];
 
-            // TODO: calculate vx and vy using the flow equation
-            float vx = 0;
-            float vy = 0;
+            // set up the matrixes
+            M.data[0][0] = Ixx;
+            M.data[0][1] = Ixy;
+            M.data[1][0] = Ixy;
+            M.data[1][1] = Iyy;
+
+            N.data[0][0] = -Ixt;
+            N.data[1][0] = -Iyt;
+
+            // Do the equation
+            matrix Mi = matrix_invert(M);
+            matrix result = matrix_mult_matrix(Mi, N);
+            float vx = result.data[0][0];
+            float vy = result.data[1][0];
 
             set_pixel(v, i/stride, j/stride, 0, vx);
             set_pixel(v, i/stride, j/stride, 1, vy);
+            
+            //free the matricies
+            free_matrix(Mi);
+            free_matrix(result); 
         }
     }
     free_matrix(M);
+    free_matrix(N);
     return v;
 }
 
