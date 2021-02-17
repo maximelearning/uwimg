@@ -1,3 +1,8 @@
+/**
+ * Estevan Seyfried, estevans
+ * Maxime Sutters, msutters
+ */
+
 #include <math.h>
 #include <stdlib.h>
 #include "image.h"
@@ -113,9 +118,9 @@ void update_layer(layer *l, double rate, double momentum, double decay)
 {
     // Calculate Δw_t = dL/dw_t - λw_t + mΔw_{t-1}
     // l->dw = dL/dw_t, l->v = Δw_t
-    matrix rTimesWPlusDW = axpy_matrix(-rate, l->w, l->dw);
+    matrix rTimesWPlusDW = axpy_matrix(-decay, l->w, l->dw);
     matrix dw_t = axpy_matrix(momentum, l->v, rTimesWPlusDW);
-    matrix wPlus1 = axpy_matrix(decay, dw_t, l->w);
+    matrix wPlus1 = axpy_matrix(rate, dw_t, l->w);
     
     // Remember to free any intermediate results to avoid memory leaks
     free_matrix(rTimesWPlusDW);
@@ -264,19 +269,29 @@ void train_model(model m, data d, int batch, int iters, double rate, double mome
 // Questions 
 //
 // 5.2.2.1 Why might we be interested in both training accuracy and testing accuracy? What do these two numbers tell us about our current model?
-// TODO
+// We care about both accuracies because we want to know how effective the training 
+// process was and how effective the model is on real data. 
+// Training accuracy pertains to how effective the model is at classifying data it was trained on.
+// Testing accuracy describes how accurate the model is at classifying data it has not seen before.
 //
 // 5.2.2.2 Try varying the model parameter for learning rate to different powers of 10 (i.e. 10^1, 10^0, 10^-1, 10^-2, 10^-3) and training the model. What patterns do you see and how does the choice of learning rate affect both the loss during training and the final model accuracy?
-// TODO
+// Accuracy for both training and testing were effected very similarly as the learning rate changed.
+// Accuracy for both peaked around 0.1, a learning rate of 10 resulted in almost no accuracy and 
+// rates lower than 0.01 corresponded to a gradual decrease in accuracy. 
 //
 // 5.2.2.3 Try varying the parameter for weight decay to different powers of 10: (10^0, 10^-1, 10^-2, 10^-3, 10^-4, 10^-5). How does weight decay affect the final model training and test accuracy?
-// TODO
+// Any weight decay higher than 1.0 resulted in a lower testing and training accuracy.
+// As weight decay becomes smaller (approaches 0) accuracy increases but eventually 
+// seems to plateau, so at least with SoftMax, a decay of 0 seems to be the best choice. 
 //
 // 5.2.3.1 Currently the model uses a logistic activation for the first layer. Try using a the different activation functions we programmed. How well do they perform? What's best?
-// TODO
+// In order from best to worst Testing Accuracy with default settings: 
+// Relu: 0.9281, LRelu: 0.9263, Linear: 0.9162, Logistic: 0.8949, SoftMax: 0.6043
+// Relu barely outpreformed LRelu.
 //
 // 5.2.3.2 Using the same activation, find the best (power of 10) learning rate for your model. What is the training accuracy and testing accuracy?
-// TODO
+// Relu peaks at a learing rate of 0.01, training accuracy: 0.92605, testing accuracy: 0.9281
+// Both accuracies decrease the further you diverge from the peak of 0.01
 //
 // 5.2.3.3 Right now the regularization parameter `decay` is set to 0. Try adding some decay to your model. What happens, does it help? Why or why not may this be?
 // TODO
