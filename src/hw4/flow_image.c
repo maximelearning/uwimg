@@ -1,3 +1,8 @@
+/**
+ * Estevan Seyfried, estevans
+ * Maxime Sutters, msutters 
+ */
+ 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
