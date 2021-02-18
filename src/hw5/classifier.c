@@ -290,18 +290,21 @@ void train_model(model m, data d, int batch, int iters, double rate, double mome
 // Relu barely outpreformed LRelu.
 //
 // 5.2.3.2 Using the same activation, find the best (power of 10) learning rate for your model. What is the training accuracy and testing accuracy?
-// Relu peaks at a learing rate of 0.01, training accuracy: 0.92605, testing accuracy: 0.9281
+// Relu peaks at a learning rate of 0.01, training accuracy: 0.92605, testing accuracy: 0.9281
 // Both accuracies decrease the further you diverge from the peak of 0.01
 //
 // 5.2.3.3 Right now the regularization parameter `decay` is set to 0. Try adding some decay to your model. What happens, does it help? Why or why not may this be?
-// TODO
+// A small amount of weight decay (0.001) resulted in a slightly higher accuracy, but accuracy dropped dramatically for any rate higher 
+// than 0.1. At higher decay rates the benefits that we gained from penalizing larger weights begins to negativly affect the entire model.
 //
 // 5.2.3.4 Modify your model so it has 3 layers instead of two. The layers should be `inputs -> 64`, `64 -> 32`, and `32 -> outputs`. Also modify your model to train for 3000 iterations instead of 1000. Look at the training and testing error for different values of decay (powers of 10, 10^-4 -> 10^0). Which is best? Why?
-// TODO
+// A decay rate of 0.001 performed slightly better than 0 and much better than 10.
+// As we suspected previously, a small amount of decay helps normalize the model, but too much
+// negativly affects accuracy. 
 //
 // 5.3.2.1 How well does your network perform on the CIFAR dataset?
-// TODO
-//
-
-
-
+// We tried different configurations of layers and settings, but the 
+// best results for MNIST also performed the best for CIFAR. However the 
+// accuracy was much lower. Using a 3 layer RELU, RELU, SOFTMAX with rate: 0.01, decay: 0.001
+// MNIST: training accuracy: 0.9721166666666666, test accuracy: 0.965
+// CIFAR: training accuracy: 0.46252, test accuracy: 0.4447
