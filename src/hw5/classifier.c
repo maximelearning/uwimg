@@ -1,3 +1,8 @@
+/**
+ * Estevan Seyfried, estevans
+ * Maxime Sutters, msutters
+ */
+
 #include <math.h>
 #include <stdlib.h>
 #include "image.h"
@@ -15,18 +20,20 @@ void activate_matrix(matrix m, ACTIVATION a)
         for(j = 0; j < m.cols; ++j){
             double x = m.data[i][j];
             if(a == LOGISTIC){
-                // TODO
+                m.data[i][j] = 1.0 / (1.0 + exp(-x));
             } else if (a == RELU){
-                // TODO
+                if (x <= 0) m.data[i][j] = 0.0;
             } else if (a == LRELU){
-                // TODO
+                if (x <= 0) m.data[i][j] *= 0.1;
             } else if (a == SOFTMAX){
-                // TODO
+                m.data[i][j] = exp(x);
             }
             sum += m.data[i][j];
         }
         if (a == SOFTMAX) {
-            // TODO: have to normalize by sum if we are using SOFTMAX
+            for(j = 0; j < m.cols; ++j){
+                m.data[i][j] = m.data[i][j] / sum;
+            }
         }
     }
 }
@@ -39,10 +46,17 @@ void activate_matrix(matrix m, ACTIVATION a)
 void gradient_matrix(matrix m, ACTIVATION a, matrix d)
 {
     int i, j;
-    for(i = 0; i < m.rows; ++i){
-        for(j = 0; j < m.cols; ++j){
+    for (i = 0; i < m.rows; ++i){
+        for (j = 0; j < m.cols; ++j){
             double x = m.data[i][j];
-            // TODO: multiply the correct element of d by the gradient
+            if (a == LOGISTIC){
+                d.data[i][j] *= x - x * x;
+            } else if (a == RELU){
+                if (x <= 0) d.data[i][j] = 0.0;
+            } else if (a == LRELU){
+                if (x <= 0) d.data[i][j] *= 0.1;
+            }
+            // if its linear or softmax gradient is 1, so we dont change d
         }
     }
 }
@@ -53,16 +67,16 @@ void gradient_matrix(matrix m, ACTIVATION a, matrix d)
 // returns: matrix that is output of the layer
 matrix forward_layer(layer *l, matrix in)
 {
+    // Save the input for backpropagation
+    l->in = in;  
 
-    l->in = in;  // Save the input for backpropagation
+    // Multiply input by weights and apply activation function.
+    matrix out = matrix_mult_matrix(in, l->w);
+    activate_matrix(out, l->activation);
 
-
-    // TODO: fix this! multiply input by weights and apply activation function.
-    matrix out = make_matrix(in.rows, l->w.cols);
-
-
-    free_matrix(l->out);// free the old output
-    l->out = out;       // Save the current output for gradient calculation
+    // free the old output and save the current output for gradient calculation
+    free_matrix(l->out);
+    l->out = out;
     return out;
 }
 
@@ -74,19 +88,23 @@ matrix backward_layer(layer *l, matrix delta)
 {
     // 1.4.1
     // delta is dL/dy
-    // TODO: modify it in place to be dL/d(xw)
-
+    // Modify it in place to be dL/d(xw)
+    gradient_matrix(l->out, l->activation, delta);
 
     // 1.4.2
-    // TODO: then calculate dL/dw and save it in l->dw
+    // Calculate dL/dw and save it in l->dw
+    // xt * dL/d(xw) where xt is the transpose of the input matrix x.
     free_matrix(l->dw);
-    matrix dw = make_matrix(l->w.rows, l->w.cols); // replace this
-    l->dw = dw;
+    matrix xt = transpose_matrix(l->in);
+    l->dw = matrix_mult_matrix(xt, delta);
+    free_matrix(xt);
 
-    
     // 1.4.3
-    // TODO: finally, calculate dL/dx and return it.
-    matrix dx = make_matrix(l->in.rows, l->in.cols); // replace this
+    // Calculate dL/dx and return it.
+    // dL/d(xw) * wt where wt is the transpose of our weights, w
+    matrix wt = transpose_matrix(l->w);
+    matrix dx = matrix_mult_matrix(delta, wt);
+    free_matrix(wt);
 
     return dx;
 }
@@ -98,16 +116,22 @@ matrix backward_layer(layer *l, matrix delta)
 // double decay: value for weight decay
 void update_layer(layer *l, double rate, double momentum, double decay)
 {
-    // TODO:
     // Calculate Δw_t = dL/dw_t - λw_t + mΔw_{t-1}
+    // l->dw = dL/dw_t, l->v = Δw_t
+    matrix rTimesWPlusDW = axpy_matrix(-decay, l->w, l->dw);
+    matrix dw_t = axpy_matrix(momentum, l->v, rTimesWPlusDW);
+    matrix wPlus1 = axpy_matrix(rate, dw_t, l->w);
+    
+    // Remember to free any intermediate results to avoid memory leaks
+    free_matrix(rTimesWPlusDW);
+    
     // save it to l->v
-
+    free_matrix(l->v);
+    l->v = dw_t;
 
     // Update l->w
-
-
-    // Remember to free any intermediate results to avoid memory leaks
-
+    free_matrix(l->w);
+    l->w = wPlus1;
 }
 
 // Make a new layer for our model
@@ -245,29 +269,42 @@ void train_model(model m, data d, int batch, int iters, double rate, double mome
 // Questions 
 //
 // 5.2.2.1 Why might we be interested in both training accuracy and testing accuracy? What do these two numbers tell us about our current model?
-// TODO
+// We care about both accuracies because we want to know how effective the training 
+// process was and how effective the model is on real data. 
+// Training accuracy pertains to how effective the model is at classifying data it was trained on.
+// Testing accuracy describes how accurate the model is at classifying data it has not seen before.
 //
 // 5.2.2.2 Try varying the model parameter for learning rate to different powers of 10 (i.e. 10^1, 10^0, 10^-1, 10^-2, 10^-3) and training the model. What patterns do you see and how does the choice of learning rate affect both the loss during training and the final model accuracy?
-// TODO
+// Accuracy for both training and testing were effected very similarly as the learning rate changed.
+// Accuracy for both peaked around 0.1, a learning rate of 10 resulted in almost no accuracy and 
+// rates lower than 0.01 corresponded to a gradual decrease in accuracy. 
 //
 // 5.2.2.3 Try varying the parameter for weight decay to different powers of 10: (10^0, 10^-1, 10^-2, 10^-3, 10^-4, 10^-5). How does weight decay affect the final model training and test accuracy?
-// TODO
+// Any weight decay higher than 1.0 resulted in a lower testing and training accuracy.
+// As weight decay becomes smaller (approaches 0) accuracy increases but eventually 
+// seems to plateau, so at least with SoftMax, a decay of 0 seems to be the best choice. 
 //
 // 5.2.3.1 Currently the model uses a logistic activation for the first layer. Try using a the different activation functions we programmed. How well do they perform? What's best?
-// TODO
+// In order from best to worst Testing Accuracy with default settings: 
+// Relu: 0.9281, LRelu: 0.9263, Linear: 0.9162, Logistic: 0.8949, SoftMax: 0.6043
+// Relu barely outpreformed LRelu.
 //
 // 5.2.3.2 Using the same activation, find the best (power of 10) learning rate for your model. What is the training accuracy and testing accuracy?
-// TODO
+// Relu peaks at a learning rate of 0.01, training accuracy: 0.92605, testing accuracy: 0.9281
+// Both accuracies decrease the further you diverge from the peak of 0.01
 //
 // 5.2.3.3 Right now the regularization parameter `decay` is set to 0. Try adding some decay to your model. What happens, does it help? Why or why not may this be?
-// TODO
+// A small amount of weight decay (0.001) resulted in a slightly higher accuracy, but accuracy dropped dramatically for any rate higher 
+// than 0.1. At higher decay rates the benefits that we gained from penalizing larger weights begins to negativly affect the entire model.
 //
 // 5.2.3.4 Modify your model so it has 3 layers instead of two. The layers should be `inputs -> 64`, `64 -> 32`, and `32 -> outputs`. Also modify your model to train for 3000 iterations instead of 1000. Look at the training and testing error for different values of decay (powers of 10, 10^-4 -> 10^0). Which is best? Why?
-// TODO
+// A decay rate of 0.001 performed slightly better than 0 and much better than 10.
+// As we suspected previously, a small amount of decay helps normalize the model, but too much
+// negativly affects accuracy. 
 //
 // 5.3.2.1 How well does your network perform on the CIFAR dataset?
-// TODO
-//
-
-
-
+// We tried different configurations of layers and settings, but the 
+// best results for MNIST also performed the best for CIFAR. However the 
+// accuracy was much lower. Using a 3 layer RELU, RELU, SOFTMAX with rate: 0.01, decay: 0.001
+// MNIST: training accuracy: 0.9721166666666666, test accuracy: 0.965
+// CIFAR: training accuracy: 0.46252, test accuracy: 0.4447
