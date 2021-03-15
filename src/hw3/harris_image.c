@@ -1,3 +1,8 @@
+/*
+ * Estevan Seyfried, estevans
+ * Maxime Sutters, msutters
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -6,6 +11,8 @@
 #include "image.h"
 #include "matrix.h"
 #include <time.h>
+
+#define NEG -999999.0f
 
 // Frees an array of descriptors.
 // descriptor *d: the array.
@@ -112,9 +119,23 @@ image smooth_image(image im, float sigma)
 //          third channel is IxIy.
 image structure_matrix(image im, float sigma)
 {
+    // Make derivative images
+    image Ix = convolve_image(im, make_gx_filter(), 0);
+    image Iy = convolve_image(im, make_gy_filter(), 0);
     image S = make_image(im.w, im.h, 3);
-    // TODO: calculate structure matrix for im.
-    return S;
+
+    // fill in corresponding measures
+    for (int x = 0; x < im.w; x++) {
+        for (int y = 0; y < im.h; y++) {
+            float xDer = get_pixel(Ix, x, y, 0);
+            float yDer = get_pixel(Iy, x, y, 0);
+            set_pixel(S, x, y, 0, xDer * xDer);
+            set_pixel(S, x, y, 1, yDer * yDer);
+            set_pixel(S, x, y, 2, xDer * yDer);
+        }
+    }
+    // apply gausian blur to this image to create structure matrix
+    return smooth_image(S, sigma);
 }
 
 // Estimate the cornerness of each pixel given a structure matrix S.
@@ -123,8 +144,19 @@ image structure_matrix(image im, float sigma)
 image cornerness_response(image S)
 {
     image R = make_image(S.w, S.h, 1);
-    // TODO: fill in R, "cornerness" for each pixel using the structure matrix.
-    // We'll use formulation det(S) - alpha * trace(S)^2, alpha = .06.
+
+    // We'll use formulation det(S) - alpha * trace(S)^2, alpha = .06.   
+    for (int x = 0; x < R.w; x++) {
+        for (int y = 0; y < R.h; y++) {
+            // computer determinant and trace then plug into function.
+            float x2 = get_pixel(S, x, y, 0);
+            float y2 = get_pixel(S, x, y, 1);
+            float xy = get_pixel(S, x, y, 2);
+            float det = x2 * y2 - xy * xy;
+            float trace = x2 + y2;
+            set_pixel(R, x, y, 0, det - 0.06f * trace * trace);
+        }
+    }
     return R;
 }
 
@@ -135,11 +167,27 @@ image cornerness_response(image S)
 image nms_image(image im, int w)
 {
     image r = copy_image(im);
-    // TODO: perform NMS on the response map.
+    int width = 2 * w + 1;
+    int size = width * width;
+    // Perform NMS on the response map.
     // for every pixel in the image:
-    //     for neighbors within w:
-    //         if neighbor response greater than pixel response:
-    //             set response to be very low (I use -999999 [why not 0??])
+    for (int x = 0; x < im.w; x++) {
+        for (int y = 0; y < im.h; y++) {
+            float val = get_pixel(im, x, y, 0);
+            // for neighbors within w:
+            for (int i = 0; i < size; i++) {
+                int offX = i % width - w;
+                int offY = i / width - w;
+                float nVal = get_pixel(im, x + offX, y + offY, 0);
+                // if neighbor response greater set response to be very low 
+                if (nVal > val) {
+                    set_pixel(r, x, y, 0, NEG);
+                    break;
+                }
+            }
+        }
+    }
+    
     return r;
 }
 
@@ -161,19 +209,24 @@ descriptor *harris_corner_detector(image im, float sigma, float thresh, int nms,
     // Run NMS on the responses
     image Rnms = nms_image(R, nms);
 
-
-    //TODO: count number of responses over threshold
-    int count = 1; // change this
-
+    // Count number of responses over threshold
+    int count = 0;
+    int size = Rnms.w * Rnms.h;
+    int* indexes = malloc(size * sizeof(int));
+    for (int i = 0; i < size; i++) {
+        if (Rnms.data[i] > thresh) indexes[count++] = i;
+    }
     
     *n = count; // <- set *n equal to number of corners in image.
     descriptor *d = calloc(count, sizeof(descriptor));
-    //TODO: fill in array *d with descriptors of corners, use describe_index.
-
+    for (int i = 0; i < count; i++) {
+        d[i] = describe_index(im, indexes[i]);
+    }
 
     free_image(S);
     free_image(R);
     free_image(Rnms);
+    free(indexes);
     return d;
 }
 
