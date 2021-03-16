@@ -1,0 +1,262 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Birds </title>
+  <meta name="description" content="What are birds?">
+  <meta name="author" content="EsteMax">
+</head>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+    }
+    body {
+        background-color: black;
+        color: aliceblue;
+        text-align: center;
+        font-family: Arial, sans-serif;
+    }
+
+    img {margin: 1.5em 0;}
+
+    h1{
+        padding: 1em 0 0;
+        font-size: 4em;
+    }
+
+    h2{
+        font-size: 3em;
+        margin: 3em 0 1em;
+    }
+
+    h3 {
+        clear: left;
+        font-size: 2.5em;
+        margin: 2.5em 0 0;
+    }
+
+    pre {
+        text-align: left;
+    }
+
+    p {
+        font-size: 1.5em;
+        margin: .5em 0;
+    }
+
+    .c {
+        background-color: rgb(33, 33, 33);
+        margin: .5em 0;
+        padding: .4em;
+        font-size: 1.4em;
+        text-align:left;
+    }
+
+    #center {
+        margin :auto;
+        width: 80%;
+    }
+    
+    .l {
+        width:40%;
+        float:left;
+        overflow: auto;
+    }
+
+    .r {
+        width:40%;
+        float:right;
+        overflow: auto;
+    }
+
+    .train {
+        background-color: lightgray;
+        margin: 0;
+    }
+
+</style>
+<body>
+<div id="center">
+    <h1>
+        <span style="color: #ba0000">Birds</span>, 
+        What Are They?
+    </h1>
+    <p style="font-size: .4em;">(Training an image classification model by 
+    Estevan Seyfried, and Maxime Sutters)</p>
+
+    <img src="./img/evilEye.jpeg" alt="The Evil Eye">
+
+    <p>
+        We watch them, feed them, count them, 
+        protect them, and more, but what even is a bird?
+    </p>
+    <p>
+        Since the dawn of time man has looked to the sky and dreamed of flight,
+        only to behold the teeming masses of feathered scoundrels that have already claimed
+        and squandered that gift. This humble project seeks to lay the foundations of 
+        identifying and understanding the foe, so that others may continue the work.
+    </p>
+
+
+    <h2>Laying the Foundations</h2>
+
+    <p>
+        To begin classification of these godless heathens of the sky we started 
+        with variations of ResNet, which are deep residual networks 
+        pre-trained on the ImageNet Dataset.
+    </p>
+
+    <p>
+        In order to have the best data to train this model we attempted to use
+        larger resolution training data. However we received a major setback when 
+        we realized the enemy had infiltrated even the hallowed halls of the 
+        Kaggle platform, and was attempting to halt our progress by throttling our 
+        allotted GPU memory reserves. We were forced to compromize and settled on a 
+        smaller resolution than originally planned, and further reduced the batch
+        size so we would not go over memory limits. 
+    </p>
+
+    <div class="c"><code><pre>
+    transform_train = transforms.Compose([
+        transforms.Resize(300),
+        transforms.RandomCrop(300, padding=16, padding_mode='edge'), 
+        transforms.RandomHorizontalFlip(),    
+        transforms.ToTensor(),
+    ])
+
+    ...
+
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=40, shuffle=True, num_workers=2)
+    </pre></code></div>
+
+    <p>
+        After some trial and error we settled on a configuration that seemed to 
+        perform well for the smaller models of ResNet18, it was time to begin training
+        the more advanced recruits.
+    </p>
+
+    <h3>ResNet34</h3>
+    <div class="l">
+        <pre><p>
+            Training Data: 123x128,
+            Epochs: 25,
+            Learning Rate: 0.01,
+            decay: 0.0005 
+        </p></pre>
+    </div>
+    <div class="l">
+        <p> Training Results: </p>
+        <img class="train" src="./img/res01.png" alt="ResNet32 Results">
+        <p>Final Score: 59.55 % </p>
+    </div>
+
+    <div style="clear:both;"></div>
+
+    <h3>ResNet101 V1</h3>
+    <div class="l">
+        <pre><p>
+            Training Data: 200x200,
+            Epochs: 1,
+            Learning Rate: 0.1,
+            decay: 0.0005 
+        </p></pre>
+    </div>
+    <div class="l">
+        <p> Training Results: </p>
+        <img class="train" src="./img/res02.png" alt="ResNet101 Results">
+        <p>Final Score: 45 % </p>
+    </div>
+
+    <div style="clear:both;"></div>
+
+    <h3>ResNet101 V2</h3>
+    <div class="l">
+        <pre><p>
+            Training Data: 200x200,
+            Epochs: 25,
+            Learning Rate: Schedule{0:0.08,5:0.01,10:0.001,15:0.0001,20:0.00001},
+            decay: 0.0005 
+        </p></pre>
+    </div>
+    <div class="l">
+        <p> Training Results: </p>
+        <img class="train" src="./img/res03.png" alt="ResNet101 Results">
+        <p>Final Score: 78.75 % </p>
+    </div>
+
+    <div style="clear:both;"></div>
+
+    <h3>ResNet152 V1</h3>
+    <p>Here the birds struck back with a vengence, angered by our progress they 
+        sabotaged our training during the night. We managed to pick up where we 
+        left off by loading a checkpoint, and ceased further training till we tested 
+        how the current model performed. 
+    </p>
+    <div class="l">
+        <pre><p>
+            Training Data: 360x360 with batches of 30,
+            Epochs: 26,
+            Learning Rate: Schedule{0:0.09,10:0.01,20:0.001,25:0.0001,30:0.00001},
+            decay: 0.0005 
+        </p></pre>
+    </div>
+    <div class="l">
+        <p> Training Results: </p>
+        <img class="train" src="./img/res04.png" alt="ResNet101 Results">
+        <p>Final Score: 0.651 % </p>
+    </div>
+
+    <div style="clear:both;"></div>
+
+    <h3>ResNet152 V2</h3>
+    <p>
+        With our alloted GPU Acceleration quota rapidly diminishing, we had to take
+        drastic action to make sure we saved our progress throught the training cycle.
+        The modified training code now took smaller images and saved some predictions 
+        every 5 Epochs. It reloads from the checkpoint and continues its training,
+        never ceasing in its relentless quest to identify those vile birds!
+    </p>
+
+    <div class="c"><code><pre>
+        # Train for 5 epocs, then plot progress, make predictions and continue
+        st = None
+        for i in range(5, 36, 5):
+            print("Training till {}".format(i))
+            losses = train(resnet, data['train'], epochs=i, schedule=sched, 
+                print_every=100, state=st, checkpoint_path='./')
+
+            print("Plotting 0-{}".format(i))
+            plt.plot(smooth(losses,50))
+
+            print("Predicting...")
+            predict(resnet, data['test'], 'preds%d.csv'%(i))
+
+            print("Loading checkpoint {}".format(i))
+            st = torch.load('checkpoint-%d.pkl'%(i))
+    </pre></code></div>
+
+    <div class="l">
+        <pre><p>
+            Training Data: 300x300 with batches of 40,
+            Epochs: 35,
+            Learning Rate: Schedule{0:0.1, 5:0.01, 10:0.001, 20:0.0001, 30:0.00001},
+            decay: 0.0005 
+        </p></pre>
+    </div>
+    <div class="l">
+        <p> Training Results: </p>
+        <p>img to come...</p>
+        <!-- <img class="train" src="./img/res04.png" alt="ResNet101 Results"> -->
+        <p>Final Score: TBD </p>
+    </div>
+
+    <div style="clear:both;"></div>
+    
+    <p>You doubt our Power?!!?</p>
+    <a href="birdNotebooks/">Investigate the Bird Notebooks</a>
+    <p>Team Dad Jokes</p>
+</div>
+</body>
+</html>

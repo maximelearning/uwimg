@@ -13,3 +13,8 @@ ehthumbs.db
 Icon?
 Thumbs.db
 *.swp
+train
+test
+cifar
+*.test
+*.train
