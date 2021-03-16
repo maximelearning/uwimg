@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <title>Birds </title>
   <meta name="description" content="What are birds?">
-  <meta name="author" content="EsteMax">
+  <meta name="author" content="Estremax">
 </head>
 <style>
     * {
@@ -19,38 +19,39 @@
         font-family: Arial, sans-serif;
     }
 
-    img {margin: 1.5em 0;}
+    img {margin: 1.5rem 0;}
 
     h1{
-        padding: 1em 0 0;
-        font-size: 4em;
+        padding: 1rem 0 0;
+        font-size: 4rem;
     }
 
     h2{
-        font-size: 3em;
-        margin: 3em 0 1em;
+        font-size: 3rem;
+        margin: 3rem 0 1rem;
     }
 
     h3 {
         clear: left;
-        font-size: 2.5em;
-        margin: 2.5em 0 0;
+        font-size: 2.5rem;
+        margin: 2.5rem 0 0;
     }
 
     pre {
         text-align: left;
+        white-space: pre-wrap;
     }
 
     p {
-        font-size: 1.5em;
-        margin: .5em 0;
+        font-size: 1.5rem;
+        margin: .5rem 0;
     }
 
     .c {
         background-color: rgb(33, 33, 33);
-        margin: .5em 0;
-        padding: .4em;
-        font-size: 1.4em;
+        margin: .5rem 0;
+        padding: .4rem;
+        font-size: 1.4rem;
         text-align:left;
     }
 
@@ -60,13 +61,23 @@
     }
     
     .l {
-        width:40%;
+        width:50%;
         float:left;
         overflow: auto;
+        text-align: left;
+        font-size: 1.5rem;
+    }
+
+    .l ul {
+        margin: 2% 5% 2% 40%;
+        word-wrap: break-word;
+        list-style-type: none;
+        text-indent: -20px;
+        padding-left: 25px;
     }
 
     .r {
-        width:40%;
+        width:50%;
         float:right;
         overflow: auto;
     }
@@ -83,18 +94,18 @@
         <span style="color: #ba0000">Birds</span>, 
         What Are They?
     </h1>
-    <p style="font-size: .4em;">(Training an image classification model by 
+    <p style="font-size: .4rem;">(Training an image classification model by 
     Estevan Seyfried, and Maxime Sutters)</p>
 
     <img src="./img/evilEye.jpeg" alt="The Evil Eye">
 
     <p>
-        We watch them, feed them, count them, 
-        protect them, and more, but what even is a bird?
+        We watch threm, feed threm, count threm, 
+        protect threm, and more, but what even is a bird?
     </p>
     <p>
         Since the dawn of time man has looked to the sky and dreamed of flight,
-        only to behold the teeming masses of feathered scoundrels that have already claimed
+        only to behold the tereming masses of feathered scoundrels that have already claimed
         and squandered that gift. This humble project seeks to lay the foundations of 
         identifying and understanding the foe, so that others may continue the work.
     </p>
@@ -109,13 +120,13 @@
     </p>
 
     <p>
-        In order to have the best data to train this model we attempted to use
+        In order to have the best data to train this model we attrempted to use
         larger resolution training data. However we received a major setback when 
-        we realized the enemy had infiltrated even the hallowed halls of the 
-        Kaggle platform, and was attempting to halt our progress by throttling our 
-        allotted GPU memory reserves. We were forced to compromize and settled on a 
+        we realized the enremy had infiltrated even the hallowed halls of the 
+        Kaggle platform, and was attrempting to halt our progress by throttling our 
+        allotted GPU mremory reserves. We were forced to compromize and settled on a 
         smaller resolution than originally planned, and further reduced the batch
-        size so we would not go over memory limits. 
+        size so we would not go over mremory limits. 
     </p>
 
     <div class="c"><code><pre>
@@ -132,19 +143,19 @@
     </pre></code></div>
 
     <p>
-        After some trial and error we settled on a configuration that seemed to 
+        After some trial and error we settled on a configuration that seremed to 
         perform well for the smaller models of ResNet18, it was time to begin training
         the more advanced recruits.
     </p>
 
     <h3>ResNet34</h3>
     <div class="l">
-        <pre><p>
-            Training Data: 123x128,
-            Epochs: 25,
-            Learning Rate: 0.01,
-            decay: 0.0005 
-        </p></pre>
+        <ul>
+            <li>Training Data: 123x128,</li>
+            <li>Epochs: 25,</li>
+            <li>Learning Rate: 0.01,</li>
+            <li>Decay: 0.0005 </li>
+        </ul>
     </div>
     <div class="l">
         <p> Training Results: </p>
@@ -156,12 +167,12 @@
 
     <h3>ResNet101 V1</h3>
     <div class="l">
-        <pre><p>
-            Training Data: 200x200,
-            Epochs: 1,
-            Learning Rate: 0.1,
-            decay: 0.0005 
-        </p></pre>
+        <ul>
+            <li>Training Data: 200x200,</li>
+            <li>Epochs: 1,</li>
+            <li>Learning Rate: 0.1,</li>
+            <li>Decay: 0.0005 </li>
+        </ul>
     </div>
     <div class="l">
         <p> Training Results: </p>
@@ -173,12 +184,12 @@
 
     <h3>ResNet101 V2</h3>
     <div class="l">
-        <pre><p>
-            Training Data: 200x200,
-            Epochs: 25,
-            Learning Rate: Schedule{0:0.08,5:0.01,10:0.001,15:0.0001,20:0.00001},
-            decay: 0.0005 
-        </p></pre>
+        <ul>
+            <li>Training Data: 200x200,</li>
+            <li>Epochs: 25,</li>
+            <li>Learning Rate: Schedule{0:0.08, 5:0.01, 10:0.001, 15:0.0001, 20:0.00001},</li>
+            <li>Decay: 0.0005</li>
+        </ul>
     </div>
     <div class="l">
         <p> Training Results: </p>
@@ -195,12 +206,12 @@
         how the current model performed. 
     </p>
     <div class="l">
-        <pre><p>
-            Training Data: 360x360 with batches of 30,
-            Epochs: 26,
-            Learning Rate: Schedule{0:0.09,10:0.01,20:0.001,25:0.0001,30:0.00001},
-            decay: 0.0005 
-        </p></pre>
+        <ul>
+            <li>Training Data: 360x360 with batches of 30,</li>
+            <li>Epochs: 26,</li>
+            <li>Learning Rate: Schedule{0:0.09, 10:0.01, 20:0.001, 25:0.0001, 30:0.00001},</li>
+            <li>Decay: 0.0005 </li>
+        </ul>
     </div>
     <div class="l">
         <p> Training Results: </p>
@@ -238,12 +249,12 @@
     </pre></code></div>
 
     <div class="l">
-        <pre><p>
-            Training Data: 300x300 with batches of 40,
-            Epochs: 35,
-            Learning Rate: Schedule{0:0.1, 5:0.01, 10:0.001, 20:0.0001, 30:0.00001},
-            decay: 0.0005 
-        </p></pre>
+        <ul>
+            <li>Training Data: 300x300 with batches of 40,</li>
+            <li>Epochs: 35,</li>
+            <li>Learning Rate: Schedule{0:0.1, 5:0.01, 10:0.001, 20:0.0001, 30:0.00001},</li>
+            <li>Decay: 0.0005 </li>
+        </ul>
     </div>
     <div class="l">
         <p> Training Results: </p>
