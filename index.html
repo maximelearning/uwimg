@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <title>Birds </title>
   <meta name="description" content="What are birds?">
-  <meta name="author" content="Estremax">
+  <meta name="author" content="Estemax">
 </head>
 <style>
     * {
@@ -100,12 +100,12 @@
     <img src="./img/evilEye.jpeg" alt="The Evil Eye">
 
     <p>
-        We watch threm, feed threm, count threm, 
-        protect threm, and more, but what even is a bird?
+        We watch them, feed them, count them, 
+        protect them, and more, but what even is a bird?
     </p>
     <p>
         Since the dawn of time man has looked to the sky and dreamed of flight,
-        only to behold the tereming masses of feathered scoundrels that have already claimed
+        only to behold the teeming masses of feathered scoundrels that have already claimed
         and squandered that gift. This humble project seeks to lay the foundations of 
         identifying and understanding the foe, so that others may continue the work.
     </p>
@@ -120,13 +120,13 @@
     </p>
 
     <p>
-        In order to have the best data to train this model we attrempted to use
+        In order to have the best data to train this model we attempted to use
         larger resolution training data. However we received a major setback when 
-        we realized the enremy had infiltrated even the hallowed halls of the 
-        Kaggle platform, and was attrempting to halt our progress by throttling our 
-        allotted GPU mremory reserves. We were forced to compromize and settled on a 
+        we realized the enemy had infiltrated even the hallowed halls of the 
+        Kaggle platform, and was attempting to halt our progress by throttling our 
+        allotted GPU memory reserves. We were forced to compromize and settled on a 
         smaller resolution than originally planned, and further reduced the batch
-        size so we would not go over mremory limits. 
+        size so we would not go over memory limits. 
     </p>
 
     <div class="c"><code><pre>
@@ -143,7 +143,7 @@
     </pre></code></div>
 
     <p>
-        After some trial and error we settled on a configuration that seremed to 
+        After some trial and error we settled on a configuration that seemed to 
         perform well for the smaller models of ResNet18, it was time to begin training
         the more advanced recruits.
     </p>
@@ -250,17 +250,16 @@
 
     <div class="l">
         <ul>
-            <li>Training Data: 300x300 with batches of 40,</li>
-            <li>Epochs: 35,</li>
-            <li>Learning Rate: Schedule{0:0.1, 5:0.01, 10:0.001, 20:0.0001, 30:0.00001},</li>
+            <li>Training Data: 196x196 with batches of 88,</li>
+            <li>Epochs: 40,</li>
+            <li>Learning Rate: Schedule: {0:0.08, 25:0.001, 28:0.0001, 33:0.00001},</li>
             <li>Decay: 0.0005 </li>
         </ul>
     </div>
     <div class="l">
         <p> Training Results: </p>
-        <p>img to come...</p>
-        <!-- <img class="train" src="./img/res04.png" alt="ResNet101 Results"> -->
-        <p>Final Score: TBD </p>
+        <img class="train" src="./img/res05.png" alt="ResNet101 Results">
+        <p>Final Score: 77.8 % </p>
     </div>
 
     <div style="clear:both;"></div>
